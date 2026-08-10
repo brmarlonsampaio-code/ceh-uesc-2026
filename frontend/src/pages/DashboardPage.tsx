@@ -70,7 +70,7 @@ const DashboardPage = () => {
         <div className="p-6 border-t border-gray-100">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-[var(--color-primary)] text-white rounded-full flex items-center justify-center font-bold">
-              {user?.name?.charAt(0).toUpperCase()}
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-gray-900 truncate">{user?.name}</p>
@@ -91,7 +91,7 @@ const DashboardPage = () => {
          <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--color-accent)] opacity-5 rounded-full blur-[100px] pointer-events-none"></div>
 
         <header className="mb-12">
-          <h2 className="text-4xl font-bold font-serif text-gray-900 mb-2">Olá, {user?.name?.split(' ')[0]}</h2>
+          <h2 className="text-4xl font-bold font-serif text-gray-900 mb-2">Olá, {user?.name ? user.name.split(' ')[0] : 'Usuário'}</h2>
           <p className="text-gray-500 text-lg">Bem-vindo(a) ao painel do congressista.</p>
         </header>
 
