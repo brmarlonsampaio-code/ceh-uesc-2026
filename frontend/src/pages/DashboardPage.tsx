@@ -16,7 +16,7 @@ const DashboardPage = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/user/profile', {
+        const response = await fetch('https://ceh-backend.onrender.com/user/profile', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

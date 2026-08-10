@@ -21,7 +21,7 @@ const LoginPage = () => {
 
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
+      const response = await fetch(`https://ceh-backend.onrender.com${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
