@@ -5,6 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "npx tsx index.ts",
+    "prestart": "npx prisma db push",
     "dev": "npx tsx watch index.ts",
     "postinstall": "prisma generate"
   },
