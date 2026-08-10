@@ -1,9 +1,12 @@
 import express from 'express';
+import bcrypt from 'bcrypt';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
+import { google } from 'googleapis';
+import stream from 'stream';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -28,10 +31,31 @@ app.use(globalLimiter);
 
 // 3. Strict Rate Limiting para Autenticação
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // Limite de 10 tentativas
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: 'Muitas tentativas de login/registro, tente novamente mais tarde.' }
 });
+
+// Configuração do Multer (em memória, ideal para o Render)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // Limite de 10MB por arquivo
+});
+
+// Inicializar Google Drive API (Se configurado)
+let driveService: any = null;
+try {
+  if (process.env.GOOGLE_CREDENTIALS) {
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/drive.file'],
+    });
+    driveService = google.drive({ version: 'v3', auth });
+  }
+} catch (error) {
+  console.error('Aviso: Falha ao inicializar Google Drive API. Verifique a variável GOOGLE_CREDENTIALS.');
+}
 
 // Rota básica
 app.get('/', (req, res) => {
@@ -115,15 +139,39 @@ app.get('/user/profile', authMiddleware, async (req: any, res: any) => {
   }
 });
 
-// Criar nova submissão
-app.post('/submissions', authMiddleware, async (req: any, res: any) => {
-  const { title, abstract, driveLink } = req.body;
+// Criar nova submissão com arquivo para o Google Drive
+app.post('/submissions', authMiddleware, upload.single('file'), async (req: any, res: any) => {
+  const { title, abstract } = req.body;
+  const file = req.file;
 
-  if (!title || !abstract || !driveLink) {
-    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  if (!title || !abstract || !file) {
+    return res.status(400).json({ error: 'Título, resumo e o arquivo PDF são obrigatórios.' });
+  }
+
+  if (!driveService || !process.env.GOOGLE_DRIVE_FOLDER_ID) {
+    return res.status(500).json({ error: 'Integração com Google Drive não está configurada no servidor.' });
   }
 
   try {
+    // Fazer upload para o Google Drive
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(file.buffer);
+
+    const driveRes = await driveService.files.create({
+      requestBody: {
+        name: `${req.user.userId}_${title}.pdf`,
+        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+      },
+      media: {
+        mimeType: file.mimetype,
+        body: bufferStream,
+      },
+      fields: 'id, webViewLink',
+    });
+
+    const driveLink = driveRes.data.webViewLink || '';
+
+    // Salvar no Supabase
     const submission = await prisma.submission.create({
       data: {
         title,
@@ -134,7 +182,8 @@ app.post('/submissions', authMiddleware, async (req: any, res: any) => {
     });
     res.json(submission);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao salvar submissão.' });
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao fazer upload do arquivo e salvar submissão.' });
   }
 });
 

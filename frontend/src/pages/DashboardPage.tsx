@@ -9,7 +9,8 @@ const DashboardPage = () => {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [formData, setFormData] = useState({ title: '', abstract: '', driveLink: '' });
+  const [formData, setFormData] = useState({ title: '', abstract: '' });
+  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,23 +50,35 @@ const DashboardPage = () => {
     e.preventDefault();
     setSubmitLoading(true);
     try {
+      if (!file) {
+        alert('Por favor, selecione um arquivo PDF.');
+        setSubmitLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem('token');
+      const submitData = new FormData();
+      submitData.append('title', formData.title);
+      submitData.append('abstract', formData.abstract);
+      submitData.append('file', file);
+
       const response = await fetch('https://ceh-backend.onrender.com/submissions', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(formData)
+        body: submitData
       });
 
       if (response.ok) {
         const newSub = await response.json();
         setSubmissions([newSub, ...submissions]);
         setIsModalOpen(false);
-        setFormData({ title: '', abstract: '', driveLink: '' });
+        setFormData({ title: '', abstract: '' });
+        setFile(null);
       } else {
-        alert('Erro ao enviar o trabalho. Tente novamente.');
+        const err = await response.json();
+        alert(err.error || 'Erro ao enviar o trabalho. Verifique as configurações do servidor.');
       }
     } catch (error) {
       alert('Erro de conexão.');
@@ -217,16 +230,15 @@ const DashboardPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Link do Arquivo (PDF no Google Drive)</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Arquivo do Trabalho (PDF)</label>
                   <input 
-                    type="url" 
+                    type="file" 
+                    accept="application/pdf"
                     required 
-                    value={formData.driveLink}
-                    onChange={(e) => setFormData({...formData, driveLink: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-gray-50 focus:bg-white transition-all"
-                    placeholder="https://drive.google.com/..."
+                    onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-gray-50 focus:bg-white transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-[var(--color-primary)] hover:file:bg-red-100"
                   />
-                  <p className="text-xs text-gray-500 mt-2">Certifique-se de que o link está configurado como "Qualquer pessoa com o link pode ler".</p>
+                  <p className="text-xs text-gray-500 mt-2">O arquivo será enviado diretamente para o Google Drive da coordenação.</p>
                 </div>
               </div>
 
