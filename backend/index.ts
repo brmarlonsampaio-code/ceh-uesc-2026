@@ -3,14 +3,35 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_ciclo2026';
 
-app.use(cors());
+// 1. Strict CORS
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://brmarlonsampaio-code.github.io' 
+    : ['http://localhost:5173', 'http://127.0.0.1:5173']
+}));
 app.use(express.json());
+
+// 2. Global Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // Limite de 100 requisições por IP
+  message: { error: 'Muitas requisições deste IP, tente novamente em 15 minutos.' }
+});
+app.use(globalLimiter);
+
+// 3. Strict Rate Limiting para Autenticação
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 10, // Limite de 10 tentativas
+  message: { error: 'Muitas tentativas de login/registro, tente novamente mais tarde.' }
+});
 
 // Rota básica
 app.get('/', (req, res) => {
@@ -18,7 +39,7 @@ app.get('/', (req, res) => {
 });
 
 // Registro
-app.post('/auth/register', async (req, res) => {
+app.post('/auth/register', authLimiter, async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
@@ -44,7 +65,7 @@ app.post('/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -91,6 +112,42 @@ app.get('/user/profile', authMiddleware, async (req: any, res: any) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ error: 'Erro ao buscar perfil.' });
+  }
+});
+
+// Criar nova submissão
+app.post('/submissions', authMiddleware, async (req: any, res: any) => {
+  const { title, abstract, driveLink } = req.body;
+
+  if (!title || !abstract || !driveLink) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    const submission = await prisma.submission.create({
+      data: {
+        title,
+        abstract,
+        driveLink,
+        userId: req.user.userId,
+      },
+    });
+    res.json(submission);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao salvar submissão.' });
+  }
+});
+
+// Listar submissões do usuário logado
+app.get('/submissions', authMiddleware, async (req: any, res: any) => {
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao buscar submissões.' });
   }
 });
 

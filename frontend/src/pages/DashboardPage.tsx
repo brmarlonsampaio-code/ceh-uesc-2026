@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, LogOut, FileText, Calendar, Award } from 'lucide-react';
+import { BookOpen, LogOut, FileText, Calendar, Award, X, Plus, CheckCircle } from 'lucide-react';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [formData, setFormData] = useState({ title: '', abstract: '', driveLink: '' });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -16,18 +20,20 @@ const DashboardPage = () => {
       }
 
       try {
-        const response = await fetch('https://ceh-backend.onrender.com/user/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+        // Fetch Profile
+        const profileRes = await fetch('https://ceh-backend.onrender.com/user/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!profileRes.ok) throw new Error('Não autorizado');
+        setUser(await profileRes.json());
 
-        if (!response.ok) {
-          throw new Error('Não autorizado');
+        // Fetch Submissions
+        const subRes = await fetch('https://ceh-backend.onrender.com/submissions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (subRes.ok) {
+          setSubmissions(await subRes.json());
         }
-
-        const userData = await response.json();
-        setUser(userData);
       } catch (error) {
         localStorage.removeItem('token');
         navigate('/login');
@@ -38,6 +44,35 @@ const DashboardPage = () => {
 
     fetchProfile();
   }, [navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('https://ceh-backend.onrender.com/submissions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const newSub = await response.json();
+        setSubmissions([newSub, ...submissions]);
+        setIsModalOpen(false);
+        setFormData({ title: '', abstract: '', driveLink: '' });
+      } else {
+        alert('Erro ao enviar o trabalho. Tente novamente.');
+      }
+    } catch (error) {
+      alert('Erro de conexão.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -96,14 +131,41 @@ const DashboardPage = () => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-            <h3 className="text-xl font-bold mb-4 font-serif text-gray-900 flex items-center gap-2">
-              <FileText className="text-[var(--color-primary)]" /> Submissão de Trabalhos
-            </h3>
-            <p className="text-gray-600 mb-6">Você ainda não submeteu nenhum resumo expandido ou artigo completo.</p>
-            <button className="bg-[var(--color-primary)] text-white px-6 py-3 rounded-xl font-medium hover:bg-[var(--color-primary-dark)] transition-colors w-full sm:w-auto">
-              Submeter Novo Trabalho
-            </button>
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold font-serif text-gray-900 flex items-center gap-2">
+                <FileText className="text-[var(--color-primary)]" /> Trabalhos
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-[var(--color-primary)] text-white p-2 rounded-xl hover:bg-[var(--color-primary-dark)] transition-colors flex items-center gap-1 text-sm font-medium"
+              >
+                <Plus size={18} /> Novo
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+              {submissions.length === 0 ? (
+                <div className="text-center text-gray-500 py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <p>Nenhum trabalho submetido ainda.</p>
+                </div>
+              ) : (
+                submissions.map((sub: any) => (
+                  <div key={sub.id} className="p-4 border border-gray-100 rounded-2xl hover:border-[var(--color-primary)] transition-colors bg-white shadow-sm">
+                    <h4 className="font-bold text-gray-900 truncate">{sub.title}</h4>
+                    <p className="text-xs text-gray-500 mt-1 mb-3 line-clamp-2">{sub.abstract}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md flex items-center gap-1">
+                        <CheckCircle size={12} /> {sub.status}
+                      </span>
+                      <a href={sub.driveLink} target="_blank" rel="noreferrer" className="text-xs text-[var(--color-primary)] font-medium hover:underline">
+                        Ver Arquivo
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
           
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
@@ -116,6 +178,78 @@ const DashboardPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal de Submissão */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl animate-fade-in-up">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-2xl font-bold font-serif text-gray-900">Submeter Trabalho</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-8">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Título do Trabalho</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-gray-50 focus:bg-white transition-all"
+                    placeholder="Ex: A influência da Revolução Industrial..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Resumo (Abstract)</label>
+                  <textarea 
+                    required 
+                    rows={4}
+                    value={formData.abstract}
+                    onChange={(e) => setFormData({...formData, abstract: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-gray-50 focus:bg-white transition-all resize-none"
+                    placeholder="Cole aqui o resumo do seu trabalho..."
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Link do Arquivo (PDF no Google Drive)</label>
+                  <input 
+                    type="url" 
+                    required 
+                    value={formData.driveLink}
+                    onChange={(e) => setFormData({...formData, driveLink: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-gray-50 focus:bg-white transition-all"
+                    placeholder="https://drive.google.com/..."
+                  />
+                  <p className="text-xs text-gray-500 mt-2">Certifique-se de que o link está configurado como "Qualquer pessoa com o link pode ler".</p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-4 justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-3 rounded-xl font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitLoading}
+                  className="px-6 py-3 rounded-xl font-medium bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {submitLoading ? 'Enviando...' : 'Finalizar Submissão'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
