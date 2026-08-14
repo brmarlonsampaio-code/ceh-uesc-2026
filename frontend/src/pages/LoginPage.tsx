@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Fingerprint, Lock, FileDigit, ArrowLeft, Loader2 } from 'lucide-react';
+import { BookOpen, User, Lock, Mail, ArrowLeft, Loader2 } from 'lucide-react';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'ACESSO NEGADO.');
+        throw new Error(data.error || 'Ocorreu um erro.');
       }
 
       localStorage.setItem('token', data.token);
@@ -43,47 +43,49 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-light)] flex items-center justify-center p-4 relative overflow-hidden" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #e0e0e0 25%, #e0e0e0 75%, #000 75%, #000)', backgroundPosition: '0 0, 10px 10px', backgroundSize: '20px 20px', opacity: 0.9 }}>
+    <div className="min-h-screen bg-[var(--color-light)] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decoração */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[var(--color-primary)] opacity-10 rounded-full blur-[100px] pointer-events-none"></div>
       
       <button 
         onClick={() => navigate('/')}
-        className="absolute top-8 left-8 flex items-center gap-2 text-black hover:bg-black hover:text-white px-2 py-1 transition-colors font-bold uppercase border-2 border-black bg-white shadow-[4px_4px_0px_#000]"
+        className="absolute top-8 left-8 flex items-center gap-2 text-gray-500 hover:text-[var(--color-primary)] transition-colors"
       >
-        <ArrowLeft size={20} /> ABORTAR / RETORNAR
+        <ArrowLeft size={20} /> Voltar para o início
       </button>
 
-      <div className="brutalist-box w-full max-w-md p-10 relative z-10 bg-white">
-        <div className="flex flex-col items-center mb-8 border-b-4 border-black pb-6">
-          <div className="w-20 h-20 bg-black flex items-center justify-center mb-4">
-            <ShieldAlert className="text-white" size={40} />
+      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-10 relative z-10 border border-gray-100">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+            <BookOpen className="text-[var(--color-primary)]" size={32} />
           </div>
-          <h2 className="text-3xl font-bold text-black text-center tracking-widest">
-            {isLogin ? 'IDENTIFICAÇÃO' : 'REGISTRO CIVIL'}
+          <h2 className="text-3xl font-bold text-gray-900 font-serif text-center">
+            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
           </h2>
-          <p className="text-black font-bold mt-2 text-center text-sm uppercase bg-yellow-400 px-2">
-            {isLogin ? 'ACESSO RESTRITO AO SISTEMA' : 'INCLUSÃO DE INDIVÍDUO NO BANCO DE DADOS'}
+          <p className="text-gray-500 mt-2 text-center">
+            {isLogin ? 'Acesse o painel do congressista' : 'Junte-se ao Ciclo de Estudos Históricos 2026'}
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-600 text-white p-4 mb-6 font-bold uppercase flex items-center gap-2 brutalist-box border-red-900">
-            <ShieldAlert size={20}/> {error}
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100 text-center">
+            {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-bold text-black mb-2 uppercase">NOME DO INDIVÍDUO</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Nome Completo</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Fingerprint className="text-black" size={18} />
+                  <User className="text-gray-400" size={18} />
                 </div>
                 <input
                   type="text"
                   required={!isLogin}
-                  className="w-full pl-11 pr-4 py-3 brutalist-input"
-                  placeholder="NOME COMPLETO"
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-white transition-all"
+                  placeholder="Seu nome"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
@@ -92,16 +94,16 @@ const LoginPage = () => {
           )}
 
           <div>
-            <label className="block text-sm font-bold text-black mb-2 uppercase">IDENTIFICADOR (E-MAIL)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">E-mail</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <FileDigit className="text-black" size={18} />
+                <Mail className="text-gray-400" size={18} />
               </div>
               <input
                 type="email"
                 required
-                className="w-full pl-11 pr-4 py-3 brutalist-input"
-                placeholder="REGISTRO@SISTEMA.GOV"
+                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-white transition-all"
+                placeholder="seu@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
@@ -109,16 +111,16 @@ const LoginPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-black mb-2 uppercase">CÓDIGO DE ACESSO</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Senha</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className="text-black" size={18} />
+                <Lock className="text-gray-400" size={18} />
               </div>
               <input
                 type="password"
                 required
-                className="w-full pl-11 pr-4 py-3 brutalist-input"
-                placeholder="********"
+                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:bg-white transition-all"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
@@ -128,21 +130,21 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full brutalist-button py-4 text-lg flex items-center justify-center gap-2 mt-6"
+            className="w-full bg-[var(--color-primary)] text-white py-4 rounded-xl font-bold text-lg hover:bg-[var(--color-primary-dark)] transition-all shadow-md hover:shadow-lg disabled:opacity-70 flex items-center justify-center gap-2 mt-4"
           >
             {loading && <Loader2 className="animate-spin" size={20} />}
-            {isLogin ? 'AUTENTICAR' : 'CADASTRAR NO SISTEMA'}
+            {isLogin ? 'Entrar no Painel' : 'Finalizar Cadastro'}
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t-2 border-black pt-6">
-          <p className="text-black font-bold uppercase text-sm">
-            {isLogin ? 'INDIVÍDUO NÃO REGISTRADO?' : 'JÁ POSSUI PRONTUÁRIO?'}
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            {isLogin ? 'Ainda não tem inscrição?' : 'Já possui uma conta?'}
             <button
               onClick={() => { setIsLogin(!isLogin); setError(''); }}
-              className="ml-2 bg-black text-white px-2 py-1 hover:bg-yellow-400 hover:text-black transition-colors"
+              className="ml-2 font-bold text-[var(--color-primary)] hover:underline"
             >
-              {isLogin ? 'SOLICITAR REGISTRO' : 'INICIAR SESSÃO'}
+              {isLogin ? 'Cadastre-se' : 'Faça Login'}
             </button>
           </p>
         </div>

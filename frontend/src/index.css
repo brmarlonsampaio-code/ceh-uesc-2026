@@ -1,72 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #111111;
-  --color-primary-dark: #000000;
-  --color-accent: #721c24; /* Faded Blood Red */
-  --color-accent-light: #f8d7da;
-  --color-dark: #000000;
-  --color-light: #e0e0e0; /* Concrete Gray */
+  --color-primary: #800000;
+  --color-primary-dark: #5c0000;
+  --color-accent: #d4af37;
+  --color-accent-light: #f3e5ab;
+  --color-dark: #121212;
+  --color-light: #f9f9f9;
 }
 
 body {
-  font-family: 'Courier New', Courier, monospace;
+  font-family: 'Inter', sans-serif;
   background-color: var(--color-light);
   color: var(--color-dark);
-  letter-spacing: -0.5px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: 700;
-  text-transform: uppercase;
+  font-family: 'Merriweather', serif;
 }
 
-/* Brutalist UI Utilities */
-.brutalist-box {
-  background: #ffffff;
-  border: 3px solid #000000;
-  box-shadow: 4px 4px 0px #000000;
-  border-radius: 0;
-}
-
-.brutalist-input {
-  background: #f0f0f0;
-  border: 2px solid #000000;
-  border-radius: 0;
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: bold;
-}
-
-.brutalist-input:focus {
-  background: #ffffff;
-  outline: none;
-  box-shadow: inset 4px 4px 0px rgba(0,0,0,0.1);
-}
-
-.brutalist-button {
-  background: #000000;
-  color: #ffffff;
-  border: 2px solid #000000;
-  border-radius: 0;
-  text-transform: uppercase;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.brutalist-button:hover {
-  background: #ffffff;
-  color: #000000;
-  box-shadow: 4px 4px 0px #000000;
-  transform: translate(-2px, -2px);
-  transition: all 0.1s;
-}
-
-/* Censorship effect */
-.censored {
-  background-color: #000000;
-  color: #000000;
-}
-.censored:hover {
-  color: #ffffff;
+/* Efeito glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
